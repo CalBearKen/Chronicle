@@ -1,0 +1,9 @@
+2025-02-08 19:36:07,665 - INFO - Starting batch scrape
+2025-02-08 19:36:07,937 - INFO - package: mysql.connector.plugins
+2025-02-08 19:36:07,937 - INFO - plugin_name: caching_sha2_password
+2025-02-08 19:36:07,937 - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLCachingSHA2PasswordAuthPlugin
+2025-02-08 21:17:38,811 - INFO - Starting batch scrape
+2025-02-09 05:58:36,689 - INFO - Starting batch scrape
+2025-02-09 05:58:36,935 - INFO - package: mysql.connector.plugins
+2025-02-09 05:58:36,936 - INFO - plugin_name: caching_sha2_password
+2025-02-09 05:58:36,936 - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLCachingSHA2PasswordAuthPlugin

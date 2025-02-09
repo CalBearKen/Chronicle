@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: rss_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-rss_feed}
+      MYSQL_USER: ${DB_USER:-rss_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-rss_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - chroniclr_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  scraper:
+    build: 
+      context: .
+      dockerfile: Dockerfile.scraper
+    container_name: chroniclr_scraper
+    user: scraper
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DB_USER=${DB_USER:-rss_user}
+      - DB_PASSWORD=${DB_PASSWORD:-rss_password}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_NAME=${DB_NAME:-rss_feed}
+      - FEED_FETCH_TIMEOUT=${FEED_FETCH_TIMEOUT:-30}
+      - MAX_SUMMARY_LENGTH=${MAX_SUMMARY_LENGTH:-65535}
+      - CHUNK_SIZE=${CHUNK_SIZE:-1000}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./:/app:ro
+      - ./feeds.csv:/app/feeds.csv:ro
+    networks:
+      - chroniclr_net
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: chroniclr_app
+    user: app
+    restart: unless-stopped
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PYTHONUNBUFFERED=1
+      - DB_USER=${DB_USER:-rss_user}
+      - DB_PASSWORD=${DB_PASSWORD:-rss_password}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_NAME=${DB_NAME:-rss_feed}
+    volumes:
+      - ./:/app:ro
+    ports:
+      - "5000:5000"
+    networks:
+      - chroniclr_net
+    depends_on:
+      scraper:
+        condition: service_completed_successfully
+
+volumes:
+  mysql_data:
+
+networks:
+  chroniclr_net:
+    driver: bridge 

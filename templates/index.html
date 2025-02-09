@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chroniclr</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chroniclr</h1>
+            <div class="date-navigation">
+                <div class="date-display">
+                    <span id="current-date" class="current-date"></span>
+                </div>
+                <div class="date-controls">
+                    <input type="date" 
+                           id="date-picker" 
+                           min="{{ earliest_date }}" 
+                           max="{{ latest_date }}"
+                           value="{{ latest_date }}">
+                    <div class="slider-container">
+                        <input type="range" 
+                               id="date-slider" 
+                               min="0" 
+                               max="100" 
+                               value="100"
+                               class="date-range-slider">
+                        <div class="slider-labels">
+                            <span class="start-date">{{ earliest_date }}</span>
+                            <span class="end-date">{{ latest_date }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <div class="articles-container">
+                <div class="loading-indicator" id="loading-indicator">
+                    <div class="spinner"></div>
+                    <span>Loading articles...</span>
+                </div>
+                <div id="articles-list" class="articles-list">
+                    {% raw %}<div class="article-item" v-for="article in articles">
+                        <div class="article-header" @click="toggleArticle(article.id)">
+                            <div class="header-content">
+                                <h3>{{ article.title }}</h3>
+                                <div class="article-meta">
+                                    <span class="publication">{{ article.publication }}</span>
+                                    <span class="date">{{ formatDate(article.published) }}</span>
+                                </div>
+                            </div>
+                            <span class="toggle-icon">▼</span>
+                        </div>
+                        <div class="article-summary" :class="{ 'expanded': article.expanded }">
+                            <p>{{ article.summary || 'No summary available' }}</p>
+                            <a :href="article.link" target="_blank" class="read-more">Read full article →</a>
+                        </div>
+                    </div>{% endraw %}
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html> 
