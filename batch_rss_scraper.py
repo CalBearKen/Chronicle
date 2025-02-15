@@ -26,13 +26,40 @@ logger = logging.getLogger(__name__)
 class FeedProcessor:
     def __init__(self):
         """Initialize database connection"""
-        self.engine = create_engine(
-            f"mysql+mysqlconnector://{getenv('DB_USER')}:{getenv('DB_PASSWORD')}@{getenv('DB_HOST')}/{getenv('DB_NAME')}"
-        )
-        self.chunk_size = int(getenv('CHUNK_SIZE', 1000))
-        self.max_summary_length = int(getenv('MAX_SUMMARY_LENGTH', 65535))
-        self.feed_timeout = int(getenv('FEED_FETCH_TIMEOUT', 30))
-        logger.info("Database connection initialized")
+        try:
+            # Create SQLAlchemy connection string with proper format
+            db_url = (
+                f"mysql+mysqlconnector://"
+                f"{getenv('DB_USER', 'rss_user')}:"
+                f"{getenv('DB_PASSWORD', 'rss_password')}@"
+                f"{getenv('DB_HOST', 'db')}:3306/"  # Add explicit port
+                f"{getenv('DB_NAME', 'rss_feed')}"
+            )
+            
+            logger.info(f"Connecting to database at {getenv('DB_HOST', 'db')}")
+            
+            # Add connection pooling and retry settings
+            self.engine = create_engine(
+                db_url,
+                pool_pre_ping=True,  # Check connection before using
+                pool_recycle=3600,   # Recycle connections after an hour
+                connect_args={
+                    'connect_timeout': 60  # Wait up to 60 seconds for connection
+                }
+            )
+            
+            # Test connection
+            with self.engine.connect() as conn:
+                logger.info("Database connection successful")
+            
+            self.chunk_size = int(getenv('CHUNK_SIZE', 1000))
+            self.max_summary_length = int(getenv('MAX_SUMMARY_LENGTH', 65535))
+            self.feed_timeout = int(getenv('FEED_FETCH_TIMEOUT', 30))
+            
+        except Exception as e:
+            logger.error(f"Database connection error: {type(e).__name__}")
+            logger.debug(f"Detailed error: {str(e)}")
+            raise
 
     def validate_feed_url(self, url: str) -> bool:
         """Validate URL format"""

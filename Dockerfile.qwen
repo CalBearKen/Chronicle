@@ -1,0 +1,25 @@
+FROM nvidia/cuda:12.1.0-devel-ubuntu22.04
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install vLLM
+RUN pip3 install vllm>=0.2.7 transformers>=4.36.0 torch>=2.1.0
+
+# Install OpenAI API compatibility server
+RUN pip3 install fastapi>=0.109.0 uvicorn>=0.27.0
+
+WORKDIR /app
+
+# Copy server code
+COPY qwen_server.py .
+
+# Expose port for API
+EXPOSE 8000
+
+# Run server
+CMD ["python3", "qwen_server.py"] 

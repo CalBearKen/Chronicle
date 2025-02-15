@@ -1,4 +1,7 @@
+# Enable BuildKit
 version: '3.8'
+x-build-args: &build-args
+  DOCKER_BUILDKIT: 1
 
 services:
   db:
@@ -49,7 +52,7 @@ services:
         condition: service_healthy
 
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.app
     container_name: chroniclr_app
@@ -71,9 +74,54 @@ services:
     depends_on:
       scraper:
         condition: service_completed_successfully
+      llm:
+        condition: service_healthy
+
+  qdrant:
+    image: qdrant/qdrant
+    container_name: chroniclr_qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - chroniclr_net
+
+  llm:
+    build:
+      context: .
+      dockerfile: Dockerfile.llm
+      args:
+        HUGGING_FACE_TOKEN: ${HUGGING_FACE_TOKEN}
+    container_name: chroniclr_llm
+    environment:
+      - HUGGING_FACE_TOKEN=${HUGGING_FACE_TOKEN}
+    healthcheck:
+      test: curl -f http://localhost:8000/docs || exit 1
+      start_period: 300s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - llm_cache:/root/.cache/huggingface
+      - model_cache:/app/models
+    networks:
+      - chroniclr_net
 
 volumes:
   mysql_data:
+  qdrant_data:
+  llm_cache:
+  model_cache:
 
 networks:
   chroniclr_net:

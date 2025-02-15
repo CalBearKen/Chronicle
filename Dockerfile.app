@@ -5,6 +5,10 @@ RUN groupadd -r app && useradd -r -g app app
 
 WORKDIR /app
 
+# Create cache directory for huggingface
+RUN mkdir -p /home/app/.cache && \
+    chown -R app:app /home/app/.cache
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

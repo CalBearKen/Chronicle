@@ -12,6 +12,10 @@ RUN apt-get update && \
     wait-for-it \
     && rm -rf /var/lib/apt/lists/*
 
+# Create cache directory for huggingface
+RUN mkdir -p /home/scraper/.cache && \
+    chown -R scraper:scraper /home/scraper/.cache
+
 # Copy requirements first for better caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

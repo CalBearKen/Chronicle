@@ -5,9 +5,16 @@ echo "=== Starting Chroniclr Scraper ==="
 
 # Wait for MySQL to be ready
 echo "Waiting for MySQL..."
-until mysqladmin ping -h"db" -u"rss_user" -p"rss_password" --silent; do
+max_tries=30
+count=0
+while ! mysqladmin ping -h"db" -u"rss_user" -p"rss_password" --silent; do
     echo "MySQL not ready - waiting..."
     sleep 2
+    count=$((count + 1))
+    if [ $count -ge $max_tries ]; then
+        echo "Error: MySQL did not become ready in time"
+        exit 1
+    fi
 done
 echo "MySQL is ready!"
 
@@ -24,6 +31,15 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 echo "RSS scraper completed successfully!"
+
+# Index articles
+echo "Indexing articles..."
+python indexer.py
+if [ $? -ne 0 ]; then
+    echo "Article indexing failed!"
+    exit 1
+fi
+echo "Article indexing completed successfully!"
 
 echo "=== Scraping Complete ==="
 exit 0 

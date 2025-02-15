@@ -1,8 +1,6 @@
 CREATE DATABASE IF NOT EXISTS rss_feed;
 USE rss_feed;
 
-DROP TABLE IF EXISTS entries;  -- Drop table to remove old constraints
-
 CREATE TABLE IF NOT EXISTS entries (
     id INT AUTO_INCREMENT PRIMARY KEY,
     feed_id INT NOT NULL,
@@ -12,6 +10,7 @@ CREATE TABLE IF NOT EXISTS entries (
     author VARCHAR(255),
     entry_id VARCHAR(255),
     summary TEXT,
+    publication VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_feed_id (feed_id),
     INDEX idx_published (published)

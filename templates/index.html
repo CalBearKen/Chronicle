@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chroniclr</title>
+    <title>chronicle</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Chroniclr</h1>
+            <h1>Chronicle</h1>
+            <div class="built-with">Built with Llama</div>
             <div class="date-navigation">
                 <div class="date-display">
                     <span id="current-date" class="current-date"></span>
@@ -64,6 +65,26 @@
             </div>
         </main>
     </div>
+    
+    <!-- Chat interface -->
+    <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+            <!-- Messages will be inserted here -->
+        </div>
+        <div class="chat-input">
+            <input 
+                type="text" 
+                id="chat-input" 
+                placeholder="Ask about the news..." 
+                autocomplete="off"
+            >
+            <button 
+                type="button" 
+                id="send-button"
+            >Send</button>
+        </div>
+    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>

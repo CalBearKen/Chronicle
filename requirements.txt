@@ -27,4 +27,11 @@ openai>=1.3.5
 python-dotenv==1.0.0
 
 # Add explicit httpx version
-httpx>=0.27.0 
+httpx>=0.27.0
+
+# Vector database
+qdrant-client>=1.7.0
+sentence-transformers>=2.2.2
+
+# Retry logic
+tenacity>=8.2.3 

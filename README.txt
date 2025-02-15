@@ -4,15 +4,41 @@ Chroniclr - News Aggregation & Analysis System
 A Dockerized application that:
 1. Scrapes Substack RSS feeds
 2. Stores articles in MySQL
-3. Generates AI-powered summaries
-4. Produces daily chronicles
+3. Provides semantic search with Qdrant
+4. Offers AI chat powered by Llama 2
 5. Provides web interface
+
+=== AI Technology Stack ===
+1. Language Model
+   - Model: Llama 2 7B Chat
+   - Architecture: Transformer-based LLM
+   - Size: 7 billion parameters
+   - Training: Instruction-tuned for chat
+   - Format: 16-bit floating point (FP16)
+
+2. NVIDIA Integration
+   - CUDA Version: 12.1.0
+   - Framework: vLLM for inference optimization
+   - Features:
+     * Continuous batching
+     * KV cache management
+     * PagedAttention
+     * CUDA Graph optimization
+
+3. Vector Search
+   - Model: all-MiniLM-L6-v2
+   - Embedding size: 384 dimensions
+   - Database: Qdrant
+   - Distance metric: Cosine similarity
 
 === Prerequisites ===
 1. Docker Desktop
 2. Python 3.9+
-3. Node.js (for PDF conversion)
-4. OpenAI API key
+3. HuggingFace API key
+4. NVIDIA GPU with:
+   - CUDA 12.1+ support
+   - 16GB+ VRAM recommended
+   - Latest NVIDIA drivers
 
 === Setup ===
 1. Clone repository
@@ -40,8 +66,8 @@ A Dockerized application that:
      # Logging
      LOG_LEVEL=INFO
      
-     # OpenAI (if you're using it)
-     OPENAI_API_KEY=your_key_here
+     # HuggingFace token for Llama 2 access
+     HUGGING_FACE_TOKEN=your_key_here
      ```
    - Update database credentials in docker-compose.yml if needed
 
@@ -74,13 +100,6 @@ A Dockerized application that:
 4. Access web UI
    http://localhost:5000
 
-=== Optional Features ===
-1. Auto-start on boot (Windows):
-   - Place shortcut to rss_scraper_startup.bat in Startup folder
-   - Update paths in .bat and .ps1 files
-
-2. Convert chronicle to PDF:
-   pandoc humanity_fuck_yeah.md -o chronicle.pdf
 
 === Key Files ===
 - docker-compose.yml        # Database config
@@ -88,6 +107,8 @@ A Dockerized application that:
 - feeds.csv                 # RSS feed list
 - app.py                    # Web interface
 - batch_rss_scraper.py      # RSS feed processor
+- llm_server.py            # Llama 2 API server
+- indexer.py               # Vector search indexer
 
 === Customizing RSS Feeds ===
 1. Edit feeds.csv to manage RSS feed sources:
@@ -111,11 +132,10 @@ to take effect. The scraper imports feeds on first run.
 === Troubleshooting ===
 1. Docker issues:
    - Ensure Docker Desktop is running
-   - Check container logs: docker logs rss_mysql
-   - Access MySQL shell:
-     ```
-     docker exec -it rss_mysql mysql -u rss_user -prss_password rss_feed
-     ```
+   - Check container logs: docker logs chroniclr_llm
+   - Common issues:
+     * GPU memory errors: Try reducing model size in llm_server.py
+     * CUDA errors: Ensure NVIDIA drivers are up to date
 
 2. Database connection errors:
    - Verify credentials in db_config
@@ -123,16 +143,15 @@ to take effect. The scraper imports feeds on first run.
    - Common MySQL commands:
      ```
      SHOW TABLES;                    # List all tables
-     SELECT * FROM feeds LIMIT 5;    # View sample feeds
      SELECT * FROM entries LIMIT 5;  # View sample entries
      ```
 
 3. Missing dependencies:
    - pip install -r requirements.txt --force-reinstall
 
-4. API key errors:
-   - Confirm OPENAI_API_KEY in .env
-   - Check key validity at platform.openai.com
+4. HuggingFace token errors:
+   - Confirm HUGGING_FACE_TOKEN in .env
+   - Check token validity at huggingface.co
 
 === Maintenance ===
 1. Backup database:
@@ -143,7 +162,11 @@ to take effect. The scraper imports feeds on first run.
    - Re-run batch_rss_scraper.py
 
 3. Clear old data:
-   TRUNCATE TABLE entries; TRUNCATE TABLE daily_summaries; 
+   TRUNCATE TABLE entries; TRUNCATE TABLE daily_summaries;
+
+4. Rebuild vector index:
+   - Clear Qdrant: docker volume rm chroniclr_qdrant_data
+   - Reindex: docker-compose restart scraper
 
 === Docker Deployment ===
 1. Build containers:

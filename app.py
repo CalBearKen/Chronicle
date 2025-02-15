@@ -1,10 +1,11 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from datetime import datetime, timedelta
 import mysql.connector
 from typing import Dict, List
 import json
 from dotenv import load_dotenv
 import os
+from chatbot import NewsBot
 
 app = Flask(__name__)
 
@@ -15,6 +16,9 @@ db_config = {
     'password': 'rss_password',
     'database': 'rss_feed'
 }
+
+# Initialize chatbot
+news_bot = NewsBot()
 
 def get_date_range() -> tuple:
     """Get the earliest and latest dates from entries table."""
@@ -128,40 +132,55 @@ def get_nearest_date(date):
             conn.close()
 
 @app.route('/api/articles/<date>')
-def get_articles_api(date):
-    articles = get_articles(datetime.strptime(date, '%Y-%m-%d').date())
-    return jsonify(articles if articles else [])
-
-def get_articles(date: datetime.date) -> List[Dict]:
-    """Get raw articles for a specific date"""
+def get_articles(date):
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
         
         query = """
             SELECT 
+                e.id,
                 e.title,
+                e.author as publication,
                 e.link,
-                e.summary,
                 e.published,
-                f.title as publication
+                e.summary,
+                e.author
             FROM entries e
-            JOIN feeds f ON e.feed_id = f.id
             WHERE DATE(e.published) = %s
             ORDER BY e.published DESC
         """
         
         cursor.execute(query, (date,))
-        return cursor.fetchall()
+        articles = cursor.fetchall()
+        
+        return jsonify(articles)
         
     except Exception as e:
         print(f"Error fetching articles: {e}")
-        return []
+        return jsonify([])
+        
     finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'conn' in locals() and conn.is_connected():
-            conn.close()
+        cursor.close()
+        conn.close()
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    data = request.json
+    query = data.get('query')
+    
+    if not query:
+        return jsonify({'error': 'No query provided'}), 400
+        
+    try:
+        response = news_bot.chat(query)
+        if not response:
+            return jsonify({'error': 'No response generated'}), 500
+        
+        return jsonify({'response': response})
+    except Exception as e:
+        print(f"Chat error: {str(e)}")  # Log the error
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("Starting Flask server...")
